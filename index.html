@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Data & AI Role Constellation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- 
+      DESIGN & UX STRATEGY:
+      
+      1.  **Theme & Atmosphere:** Evolve from a "warm, neutral report" to a "cool, futuristic command center." A dark, nebula-themed background with vibrant, neon accents creates a sense of depth, sophistication, and technological prowess. This isn't just data; it's an exploration of a digital cosmos.
+
+      2.  **Narrative Flow (Scrollytelling):** The experience is redesigned as a continuous journey. Instead of disjointed sections, a single, flowing narrative guides the user from a high-level "Cosmic Overview" down to granular "Stellar Synergies." The scrollbar becomes a primary navigation tool, making discovery feel natural and cinematic.
+
+      3.  **Visual Language:**
+          * **Glassmorphism & Glow:** Translucent, blurred panels ("glass") create a layered, 3D effect. Neon glows on interactive elements provide clear visual feedback and reinforce the futuristic theme.
+          * **Dynamic Layout:** Asymmetrical grids and animated elements create visual interest and guide the eye. Static rows and columns are replaced with dynamic, responsive compositions.
+          * **Micro-interactions:** Subtle animations on hover, click, and scroll (fade-ins, subtle shifts, glowing borders) make the interface feel alive and responsive.
+
+      4.  **Component Reinvention:**
+          * **"Role Deep Dive" -> "Role Constellation":** The static list of buttons is transformed into an interactive visual map. Roles are "stars" in a constellation, making the selection process itself an engaging part of the experience.
+          * **"Compare Roles" -> "Synergy Explorer":** Standard dropdowns are replaced with a visually rich, direct-manipulation interface. The Venn diagram is no longer just a concept but a dynamic, animated reality that shows the intersection and differences in a tangible way.
+          * **"Project Workflow" -> "Mission Timeline":** The linear list becomes a vertical, scrollytelling "mission log." A glowing, animated timeline connects each phase, illustrating the project's progression and the critical handoffs between roles in a more compelling, story-driven format.
+    -->
+
+    <style>
+        :root {
+            --background-dark: #0D1127;
+            --background-glass: rgba(16, 21, 56, 0.6);
+            --border-glow: rgba(139, 92, 246, 0.3);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --text-primary: #E0E2FF;
+            --text-secondary: #A8AEC1;
+            --font-heading: 'Sora', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            background-image: radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.15), transparent 30%),
+                              radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.15), transparent 35%);
+            background-attachment: fixed;
+        }
+
+        .font-heading { font-family: var(--font-heading); }
+
+        .glass-pane {
+            background: var(--background-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-light);
+            border-radius: 1.5rem; /* 24px */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            padding: 8px 0;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #8B5CF6, #3B82F6);
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 400px;
+            margin: auto;
+        }
+
+        .animated-entry {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .animated-entry.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Constellation Styles */
+        .constellation-node {
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            cursor: pointer;
+        }
+        .constellation-node:hover .node-core {
+            transform: scale(1.15);
+            box-shadow: 0 0 25px var(--glow-color, #fff);
+        }
+        .constellation-node.active .node-core {
+            transform: scale(1.1);
+            box-shadow: 0 0 35px var(--glow-color, #fff), 0 0 50px var(--glow-color, #fff);
+        }
+        .constellation-node .node-label {
+            transition: color 0.3s ease;
+        }
+        .constellation-node:hover .node-label, .constellation-node.active .node-label {
+            color: white;
+        }
+
+        /* Synergy Explorer Styles */
+        .synergy-slot {
+            transition: all 0.4s ease;
+            border: 2px dashed var(--border-light);
+        }
+        .synergy-slot:hover {
+            border-color: #8B5CF6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .synergy-slot.filled {
+            border-style: solid;
+            background: var(--background-glass);
+        }
+
+        /* Mission Timeline Styles */
+        .timeline-container {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        #timeline-progress {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            width: 4px;
+            background: linear-gradient(to bottom, #8B5CF6, #3B82F6);
+            border-radius: 2px;
+            height: 0;
+            transition: height 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .timeline-item {
+            position: relative;
+            cursor: pointer;
+            padding: 1rem 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -37px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: var(--background-dark);
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .timeline-item.active::before {
+            border-color: #8B5CF6;
+            transform: translateY(-50%) scale(1.2);
+        }
+        .timeline-item:hover::before {
+            border-color: #3B82F6;
+        }
+
+        .tool-tag {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+        .tool-tag:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-black/30 backdrop-blur-xl sticky top-0 z-50 border-b border-white/10">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-violet-400"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <h1 class="text-xl font-bold font-heading text-white">Role Constellation</h1>
+            </div>
+            <div class="hidden md:flex space-x-8 text-sm font-medium">
+                <a href="#overview" class="nav-link text-gray-300 hover:text-white">Overview</a>
+                <a href="#constellation" class="nav-link text-gray-300 hover:text-white">Constellation</a>
+                <a href="#synergy" class="nav-link text-gray-300 hover:text-white">Synergy Explorer</a>
+                <a href="#mission" class="nav-link text-gray-300 hover:text-white">Mission Timeline</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-16 md:py-24">
+
+        <!-- SECTION 1: OVERVIEW -->
+        <section id="overview" class="scroll-mt-20 mb-32 md:mb-48">
+            <div class="text-center max-w-4xl mx-auto animated-entry">
+                <h2 class="font-heading text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400">Navigating the Data & AI Cosmos</h2>
+                <p class="text-lg md:text-xl text-slate-300 mb-12">The modern tech universe is a complex ecosystem of specialized roles. This guide is your interactive observatory, designed to demystify the pivotal roles that transform raw data into autonomous intelligence, revealing their unique orbits and collaborative gravities.</p>
+            </div>
+            <div id="interactive-pipeline" class="animated-entry">
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-4 relative">
+                    <!-- Pipeline populated by JS -->
+                </div>
+                <div id="pipeline-details" class="mt-10 min-h-[120px] glass-pane p-6 text-center transition-all duration-500 ease-in-out">
+                    <!-- Details will be shown here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: CONSTELLATION -->
+        <section id="constellation" class="scroll-mt-20 mb-32 md:mb-48">
+            <div class="text-center mb-16 animated-entry">
+                <h2 class="font-heading text-4xl md:text-5xl font-bold text-white mb-4">The Role Constellation</h2>
+                <p class="text-lg text-slate-300 max-w-3xl mx-auto">Each role is a star with its own unique brilliance. Select one to illuminate its core properties, skill spectrum, and essential toolkit.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div id="role-selector-constellation" class="lg:col-span-4 flex items-center justify-center animated-entry">
+                     <!-- Constellation populated by JS -->
+                </div>
+                <div id="role-details-content" class="lg:col-span-8 glass-pane p-6 md:p-8 transition-opacity duration-700 min-h-[500px] animated-entry">
+                    <!-- Role details dynamically injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SYNERGY EXPLORER -->
+        <section id="synergy" class="scroll-mt-20 mb-32 md:mb-48">
+            <div class="text-center mb-16 animated-entry">
+                <h2 class="font-heading text-4xl md:text-5xl font-bold text-white mb-4">Synergy Explorer</h2>
+                <p class="text-lg text-slate-300 max-w-3xl mx-auto">Explore the gravitational pull between roles. Select two specializations to visualize their shared operational space and unique cosmic domains.</p>
+            </div>
+
+            <div class="flex justify-center items-center flex-wrap gap-4 mb-10 animated-entry" id="synergy-role-picker">
+                <!-- Role picker icons populated by JS -->
+            </div>
+
+            <div id="comparison-results" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start animated-entry">
+                 <!-- Comparison details dynamically injected here -->
+            </div>
+        </section>
+
+        <!-- SECTION 4: MISSION TIMELINE -->
+        <section id="mission" class="scroll-mt-20">
+            <div class="text-center mb-16 animated-entry">
+                <h2 class="font-heading text-4xl md:text-5xl font-bold text-white mb-4">Mission Timeline: Project Chimera</h2>
+                <p class="text-lg text-slate-300 max-w-3xl mx-auto">Follow a mission from concept to autonomous execution. This timeline illustrates the critical handoffs and collaborative fusion required to build an AI-powered customer support agent.</p>
+            </div>
+
+            <div class="lg:flex lg:gap-12 animated-entry">
+                <div class="lg:w-1/3 mb-8 lg:mb-0">
+                    <div id="workflow-steps-nav" class="timeline-container">
+                        <div id="timeline-progress"></div>
+                         <!-- Workflow navigation dynamically injected here -->
+                    </div>
+                </div>
+                <div class="lg:w-2/3">
+                    <div id="workflow-details-content" class="glass-pane p-8 min-h-[400px]">
+                        <!-- Workflow details dynamically injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center p-8 mt-24 border-t border-white/10">
+        <p class="text-slate-400 text-sm">A reimagined interactive visualization based on the "Set-Theoretic Demarcation of Modern Data and AI Roles" report.</p>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DATA STORE ---
+        const appData = {
+            roles: {
+                da: { name: 'Data Analyst', id: 'da', initials: 'DA', color: '#3B82F6', description: 'The critical translator bridging raw data and strategic decisions, analyzing history to identify trends and explain past performance.', objective: 'Interpret historical data for business insight.', focus: 'Past (Descriptive & Diagnostic)', skills: [{ skill: 'Business Acumen', level: 9 }, { skill: 'Statistics', level: 7 }, { skill: 'Data Visualization', level: 9 }, { skill: 'Programming', level: 6 }, { skill: 'ML Modeling', level: 2 }, { skill: 'Systems & Infra', level: 1 }], tools: ['SQL', 'Tableau', 'Power BI', 'Excel', 'Python (Pandas)', 'R'], uniqueDomain: 'The core domain is applying business context to data. Value is measured by the clarity and impact of insights delivered, making data meaningful to decision-makers. Key elements: `Business_Interpretation`, `Data_Storytelling`, `Stakeholder_Communication`.', softSkills: 'Communication, Storytelling, Business Acumen' },
+                de: { name: 'Data Engineer', id: 'de', initials: 'DE', color: '#10B981', description: 'The architect of the data ecosystem, responsible for creating and managing systems that collect, store, and process data at scale.', objective: 'Build and maintain the data infrastructure.', focus: 'System (Infrastructure & Pipelines)', skills: [{ skill: 'Business Acumen', level: 3 }, { skill: 'Statistics', level: 2 }, { skill: 'Data Visualization', level: 1 }, { skill: 'Programming', level: 9 }, { skill: 'ML Modeling', level: 1 }, { skill: 'Systems & Infra', level: 10 }], tools: ['Python', 'Java', 'Scala', 'SQL', 'Spark', 'Kafka', 'Airflow', 'Snowflake', 'Cloud (AWS/GCP/Azure)'], uniqueDomain: 'The core domain is the architecture of the data ecosystem. This foundational work involves designing, building, and maintaining scalable data pipelines and warehouses. Key elements: `Data_Pipeline_Orchestration`, `Distributed_Systems`, `DataOps`.', softSkills: 'Systems Thinking, Problem Solving, Reliability' },
+                ds: { name: 'Data Scientist', id: 'ds', initials: 'DS', color: '#8B5CF6', description: 'A forward-looking modeler who operates at the intersection of statistics, computer science, and domain expertise to build predictive models.', objective: 'Build predictive models to forecast future outcomes.', focus: 'Future (Predictive & Prescriptive)', skills: [{ skill: 'Business Acumen', level: 7 }, { skill: 'Statistics', level: 10 }, { skill: 'Data Visualization', level: 7 }, { skill: 'Programming', level: 8 }, { skill: 'ML Modeling', level: 9 }, { skill: 'Systems & Infra', level: 4 }], tools: ['Python (Scikit-learn)', 'R', 'SQL', 'Spark (MLlib)', 'TensorFlow/PyTorch', 'Jupyter'], uniqueDomain: 'The core domain is creating new data-driven logic via models. They apply the scientific method to data, moving beyond analysis to prediction. Key elements: `Predictive_Modeling`, `Causal_Inference`, `Experimental_Design`.', softSkills: 'Critical Thinking, Scientific Rigor, Curiosity' },
+                mle: { name: 'ML Engineer', id: 'mle', initials: 'MLE', color: '#EF4444', description: 'A specialized software engineer bridging data science and production operations, responsible for the operationalization and lifecycle of ML models.', objective: 'Deploy, scale, and maintain ML models in production.', focus: 'System (Production & MLOps)', skills: [{ skill: 'Business Acumen', level: 4 }, { skill: 'Statistics', level: 6 }, { skill: 'Data Visualization', level: 3 }, { skill: 'Programming', level: 10 }, { skill: 'ML Modeling', level: 8 }, { skill: 'Systems & Infra', level: 9 }], tools: ['Python', 'Java/C++', 'Docker', 'Kubernetes', 'MLflow', 'Terraform', 'SageMaker/Vertex AI', 'Git'], uniqueDomain: 'The core domain is `ML_Productionization` and `MLOps`. This involves turning prototypes into robust products with skills like `Model_Serving_Infrastructure`, `Inference_Optimization`, and `CI/CD_for_Models`.', softSkills: 'Collaboration, Reliability, Systems Design' },
+                dle: { name: 'Deep Learning Engineer', id: 'dle', initials: 'DLE', color: '#F97316', description: 'A highly specialized MLE focusing on complex, multi-layered neural networks, deploying the models that power advanced AI applications.', objective: 'Design and deploy complex neural network architectures.', focus: 'System (Specialized Architectures)', skills: [{ skill: 'Business Acumen', level: 4 }, { skill: 'Statistics', level: 7 }, { skill: 'Data Visualization', level: 3 }, { skill: 'Programming', level: 10 }, { skill: 'ML Modeling', level: 10 }, { skill: 'Systems & Infra', level: 9 }], tools: ['TensorFlow', 'PyTorch', 'JAX', 'Python', 'C++', 'CUDA', 'OpenCV', 'Hugging Face'], uniqueDomain: 'The core domain is deep expertise in neural network theory and high-performance computing. They bridge academic research to reality. Key elements: `Advanced_NN_Architecture_Design`, `Research_Paper_Implementation`.', softSkills: 'Research Translation, Optimization, Deep Problem Solving' },
+                aie: { name: 'AI Engineer', id: 'aie', initials: 'AIE', color: '#0EA5E9', description: 'A systems architect who builds complex, autonomous AI agents, orchestrating goal-oriented systems that can reason, plan, and use tools.', objective: 'Architect and orchestrate autonomous AI systems (agents).', focus: 'System (Orchestration & Autonomy)', skills: [{ skill: 'Business Acumen', level: 6 }, { skill: 'Statistics', level: 5 }, { skill: 'Data Visualization', level: 2 }, { skill: 'Programming', level: 9 }, { skill: 'ML Modeling', level: 7 }, { skill: 'Systems & Infra', level: 8 }], tools: ['LangChain', 'LlamaIndex', 'LLM APIs', 'Vector DBs (Pinecone, Weaviate)', 'Agent Frameworks'], uniqueDomain: 'The core domain is `Agentic_Orchestration`. They design reasoning systems that can plan and dynamically use tools to achieve goals, a new level of abstraction. Key elements: `Reasoning_Loop_Design`, `Dynamic_Tool_Use`, `Intent_Specification`.', softSkills: 'Systems Thinking, Intent Specification, Creativity' }
+            },
+            pipeline: [
+                { name: 'Investigation', role: 'da', description: 'The process starts with a Data Analyst investigating historical data to understand a business problem, define its scope, and present initial findings.' },
+                { name: 'Foundation', role: 'de', description: 'A Data Engineer builds the necessary infrastructure, creating real-time data pipelines and centralizing data to support the project.' },
+                { name: 'Prediction', role: 'ds', description: 'A Data Scientist leverages the data to prototype predictive models, using scientific rigor to forecast future outcomes.' },
+                { name: 'Production', role: 'mle', description: 'An ML Engineer (or DLE for complex models) takes the prototypes and re-engineers them into robust, scalable, and monitored production services.' },
+                { name: 'Autonomy', role: 'aie', description: 'Finally, an AI Engineer architects the final system, orchestrating all components into an autonomous agent that can reason and act to achieve the business goal.' }
+            ],
+            workflow: [
+                { step: 1, title: 'Phase 1: Initial Investigation', roleId: 'da', summary: 'The mission begins with a business goal: reduce customer support costs. A Data Analyst is tasked with investigating historical support tickets and chat logs.', actions: ['Analyzes support ticket data to find common issues.', 'Uses SQL to query databases and Tableau to visualize trends.', 'Presents a report to stakeholders justifying an automated solution.'], output: 'Essential context and project scope.' },
+                { step: 2, title: 'Phase 2: Building the Data Foundation', roleId: 'de', summary: 'With the problem defined, a Data Engineer steps in to build the required real-time data infrastructure.', actions: ['Designs robust data pipelines with Kafka and Spark.', 'Ingests customer orders, shipping status, and product catalog data.', 'Sets up and populates a vector database with FAQ documents.'], output: 'Reliable, accessible, real-time data foundation.' },
+                { step: 3, title: 'Phase 3: Developing Predictive Logic', roleId: 'ds', summary: 'A Data Scientist leverages the new infrastructure to prototype several predictive models that will add intelligence to the system.', actions: ['Builds a churn prediction model to score customer frustration.', 'Develops a product recommendation algorithm for upselling.', 'Rigorously validates models for accuracy and significance.'], output: 'Core predictive logic components (as prototypes).' },
+                { step: 4, title: 'Phase 4: Productionizing the Models', roleId: 'mle', summary: 'The prototypes are not production-ready. An ML Engineer re-engineers them into industrial-strength services.', actions: ['Containerizes models using Docker.', 'Deploys them as scalable microservices on Kubernetes.', 'Sets up monitoring to track model performance and data drift.'], output: 'Reliable, scalable, and usable ML services.' },
+                { step: 5, title: 'Phase 5: Orchestrating the Agent', roleId: 'aie', summary: 'The AI Engineer assembles all the pieces into a cohesive, intelligent customer support agent.', actions: ['Designs the agent\'s reasoning loop using a framework like LangChain.', 'Implements a RAG pipeline to retrieve info from the vector DB.', 'Integrates ML services (e.g., churn prediction) as "tools" for the agent.'], output: 'A single, autonomous system addressing the business need.' },
+            ],
+            intersections: {
+                'da-de': { shared: 'Both use SQL and are concerned with data quality, but at different stages (DQL vs DDL/DML).' },
+                'da-ds': { shared: 'Large overlap. Both require strong statistics, data wrangling, and visualization. A DS often performs advanced DA work before modeling.' },
+                'de-ds': { shared: 'Both may use Python and big data tools like Spark. A DE uses Spark for data pipelines, a DS uses it for large-scale modeling.' },
+                'ds-mle': { shared: 'Both must understand ML algorithms. A DS uses them to discover and prototype, an MLE uses them to serve and scale.' },
+                'de-mle': { shared: 'Both are strong software engineers building automated pipelines. DEs build pipelines for *data*, MLEs build them for *models*.' },
+                'mle-dle': { shared: 'A DLE is a specialized MLE, possessing all core MLE competencies plus deeper skills in neural network theory, design, and optimization.' },
+                'aie-mle': { shared: 'Both deploy AI systems. An MLE deploys a single-purpose model. An AIE deploys a multi-purpose, reasoning system (agent) that uses models as tools.' },
+                'aie-de': { shared: 'Both are concerned with data retrieval. A DE builds the foundational data infrastructure. An AIE builds the "last-mile" RAG pipeline for runtime context.' }
+            }
+        };
+
+        // --- DOM ELEMENTS ---
+        const roleDetailsContent = document.getElementById('role-details-content');
+        const comparisonResults = document.getElementById('comparison-results');
+        const workflowStepsNav = document.getElementById('workflow-steps-nav');
+        const workflowDetailsContent = document.getElementById('workflow-details-content');
+        const interactivePipeline = document.querySelector('#interactive-pipeline .flex');
+        const pipelineDetails = document.getElementById('pipeline-details');
+        const constellationContainer = document.getElementById('role-selector-constellation');
+        const synergyRolePicker = document.getElementById('synergy-role-picker');
+        
+        let skillChart = null;
+        let selectedSynergyRoles = [];
+
+        // --- RENDER FUNCTIONS ---
+
+        function renderRoleDetails(roleId) {
+            const role = appData.roles[roleId];
+            if (!role) return;
+
+            roleDetailsContent.style.opacity = 0;
+            setTimeout(() => {
+                roleDetailsContent.innerHTML = `
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-4 mb-4">
+                           <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white" style="background-color: ${role.color}; box-shadow: 0 0 15px ${role.color};">
+                                ${role.initials}
+                           </div>
+                           <h3 class="font-heading text-3xl font-bold text-white">${role.name}</h3>
+                        </div>
+                        <p class="text-slate-300 mb-6 flex-grow">${role.description}</p>
+                        <div class="space-y-4 text-sm">
+                            <div><strong class="font-semibold text-slate-200">Core Objective:</strong> <span class="text-slate-300">${role.objective}</span></div>
+                            <div><strong class="font-semibold text-slate-200">Primary Focus:</strong> <span class="text-slate-300">${role.focus}</span></div>
+                            <div><strong class="font-semibold text-slate-200">Key Traits:</strong> <span class="text-slate-300">${role.softSkills}</span></div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="chart-container -mt-8"><canvas id="skillChart"></canvas></div>
+                        <div>
+                            <h4 class="font-heading text-lg font-semibold mb-3 text-center text-white">Core Protocol ($R_{${role.initials}}$)</h4>
+                            <p class="text-sm text-slate-300 bg-black/20 p-4 rounded-lg border border-white/10 font-mono">${role.uniqueDomain}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-heading text-lg font-semibold mb-3 text-white">Toolkit</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${role.tools.map(tool => `<span class="tool-tag px-3 py-1 rounded-full text-xs">${tool}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>`;
+
+                const ctx = document.getElementById('skillChart').getContext('2d');
+                if (skillChart) skillChart.destroy();
+                
+                skillChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: role.skills.map(s => s.skill),
+                        datasets: [{
+                            label: role.name,
+                            data: role.skills.map(s => s.level),
+                            backgroundColor: `${role.color}40`,
+                            borderColor: role.color,
+                            pointBackgroundColor: role.color,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: role.color
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                pointLabels: { font: { size: 12, family: "'Inter', sans-serif" }, color: 'rgba(255, 255, 255, 0.7)' },
+                                suggestedMin: 0, suggestedMax: 10,
+                                ticks: { display: false, stepSize: 2 }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+                roleDetailsContent.style.opacity = 1;
+            }, 200);
+
+            document.querySelectorAll('.constellation-node').forEach(node => {
+                node.classList.toggle('active', node.dataset.role === roleId);
+            });
+        }
+
+        function renderComparison() {
+            if (selectedSynergyRoles.length < 2) {
+                comparisonResults.innerHTML = `<div class="lg:col-span-3 text-center p-8 glass-pane"><p class="text-slate-400">Select two roles to explore their synergy.</p></div>`;
+                return;
+            }
+            const [id1, id2] = selectedSynergyRoles;
+            const role1 = appData.roles[id1];
+            const role2 = appData.roles[id2];
+
+            const key = [id1, id2].sort().join('-');
+            const intersection = appData.intersections[key] || { shared: 'No primary intersection defined. Compare skills and tools for nuanced overlaps.' };
+
+            comparisonResults.innerHTML = `
+                <div class="glass-pane p-6 border-2" style="--glow-color: ${role1.color}; border-color: ${role1.color}80;">
+                    <h4 class="font-heading font-bold text-xl mb-2 flex items-center gap-2" style="color:${role1.color};">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background-color: ${role1.color};">${role1.initials}</div>
+                        ${role1.name}
+                    </h4>
+                    <h5 class="font-semibold text-slate-300 mb-2 text-sm">Unique Domain ($R_{${role1.initials}} \\setminus R_{${role2.initials}}$)</h5>
+                    <p class="text-sm text-slate-400 font-mono">${role1.uniqueDomain}</p>
+                </div>
+                <div class="glass-pane p-6 border-2 border-violet-400 flex flex-col justify-center items-center text-center">
+                    <h4 class="font-heading font-bold text-xl text-violet-300 mb-2">Intersection ($R_{${role1.initials}} \\cap R_{${role2.initials}}$)</h4>
+                    <p class="text-sm text-slate-300">${intersection.shared}</p>
+                </div>
+                <div class="glass-pane p-6 border-2" style="--glow-color: ${role2.color}; border-color: ${role2.color}80;">
+                    <h4 class="font-heading font-bold text-xl mb-2 flex items-center gap-2" style="color:${role2.color};">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background-color: ${role2.color};">${role2.initials}</div>
+                        ${role2.name}
+                    </h4>
+                    <h5 class="font-semibold text-slate-300 mb-2 text-sm">Unique Domain ($R_{${role2.initials}} \\setminus R_{${role1.initials}}$)</h5>
+                    <p class="text-sm text-slate-400 font-mono">${role2.uniqueDomain}</p>
+                </div>
+            `;
+        }
+
+        function renderWorkflowStep(stepNumber) {
+            const stepData = appData.workflow.find(s => s.step === stepNumber);
+            const role = appData.roles[stepData.roleId];
+            if (!stepData) return;
+
+            workflowDetailsContent.style.opacity = 0;
+            setTimeout(() => {
+                workflowDetailsContent.innerHTML = `
+                    <div class="flex items-start mb-6">
+                        <span class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-white text-2xl mr-5 flex-shrink-0" style="background-color: ${role.color}; box-shadow: 0 0 20px ${role.color};">
+                            ${role.initials}
+                        </span>
+                        <div>
+                            <h4 class="font-heading text-2xl font-bold text-white">${stepData.title}</h4>
+                            <p class="font-semibold" style="color: ${role.color};">Lead Role: ${role.name}</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-300 mb-6">${stepData.summary}</p>
+                    <div class="mb-6">
+                        <h5 class="font-semibold text-slate-200 mb-3">Key Actions:</h5>
+                        <ul class="space-y-2 text-slate-300">
+                            ${stepData.actions.map(action => `
+                                <li class="flex items-start">
+                                    <svg class="w-4 h-4 mr-3 mt-1 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span>${action}</span>
+                                </li>`).join('')}
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-slate-200 mb-2">Primary Output:</h5>
+                        <p class="text-sm text-green-200 bg-green-500/10 p-3 rounded-lg border border-green-500/30">${stepData.output}</p>
+                    </div>
+                `;
+                workflowDetailsContent.style.opacity = 1;
+            }, 200);
+
+            document.querySelectorAll('#workflow-steps-nav .timeline-item').forEach(item => {
+                item.classList.toggle('active', parseInt(item.dataset.step) === stepNumber);
+            });
+            
+            const progressIndicator = document.getElementById('timeline-progress');
+            const activeItem = document.querySelector(`.timeline-item[data-step="${stepNumber}"]`);
+            if (activeItem) {
+                progressIndicator.style.height = `${activeItem.offsetTop + activeItem.offsetHeight / 2 - 10}px`;
+            }
+        }
+
+        function handleSynergyPick(roleId) {
+            const index = selectedSynergyRoles.indexOf(roleId);
+            if (index > -1) {
+                selectedSynergyRoles.splice(index, 1);
+            } else {
+                if (selectedSynergyRoles.length >= 2) {
+                    selectedSynergyRoles.shift();
+                }
+                selectedSynergyRoles.push(roleId);
+            }
+            updateSynergyPickerUI();
+            renderComparison();
+        }
+
+        function updateSynergyPickerUI() {
+            document.querySelectorAll('#synergy-role-picker .synergy-slot').forEach(slot => {
+                const roleId = slot.dataset.role;
+                const isSelected = selectedSynergyRoles.includes(roleId);
+                slot.classList.toggle('filled', isSelected);
+                slot.style.borderColor = isSelected ? appData.roles[roleId].color : 'rgba(255, 255, 255, 0.1)';
+                slot.style.boxShadow = isSelected ? `0 0 20px ${appData.roles[roleId].color}60` : 'none';
+            });
+        }
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Populate Pipeline
+            appData.pipeline.forEach((step, index) => {
+                const role = appData.roles[step.role];
+                const pipelineStepEl = document.createElement('div');
+                pipelineStepEl.className = 'text-center cursor-pointer group flex-1';
+                pipelineStepEl.dataset.index = index;
+                pipelineStepEl.innerHTML = `
+                    <div class="w-24 h-24 mx-auto rounded-full border-4 flex items-center justify-center text-2xl font-bold transition-all duration-300 bg-black/20" style="border-color: ${role.color}80; color: ${role.color};">
+                       ${role.initials}
+                    </div>
+                    <p class="mt-3 font-semibold text-slate-300 transition-colors duration-300 group-hover:text-white">${step.name}</p>
+                `;
+                interactivePipeline.appendChild(pipelineStepEl);
+                if (index < appData.pipeline.length - 1) {
+                    const arrow = document.createElement('div');
+                    arrow.className = 'hidden md:flex items-center text-4xl text-white/20 self-center mt-[-2rem]';
+                    arrow.innerHTML = `&rarr;`;
+                    interactivePipeline.appendChild(arrow);
+                }
+            });
+
+            // Populate Constellation
+            const positions = [
+                { top: '0%', left: '50%' }, { top: '25%', left: '10%' }, { top: '25%', left: '90%' },
+                { top: '75%', left: '10%' }, { top: '75%', left: '90%' }, { top: '100%', left: '50%' }
+            ];
+            const roleIds = Object.keys(appData.roles);
+            const constellationWrapper = document.createElement('div');
+            constellationWrapper.className = 'relative w-full max-w-sm h-80 mx-auto';
+            roleIds.forEach((id, i) => {
+                const role = appData.roles[id];
+                const node = document.createElement('div');
+                node.className = 'constellation-node absolute transform -translate-x-1/2 -translate-y-1/2';
+                node.style.top = positions[i].top;
+                node.style.left = positions[i].left;
+                node.style.setProperty('--glow-color', role.color);
+                node.dataset.role = id;
+                node.innerHTML = `
+                    <div class="node-core w-16 h-16 rounded-full flex items-center justify-center text-lg font-bold text-white transition-all duration-300" style="background-color: ${role.color}; border: 2px solid white;">${role.initials}</div>
+                    <p class="node-label text-center mt-2 font-semibold text-slate-400">${role.name}</p>
+                `;
+                constellationWrapper.appendChild(node);
+            });
+            constellationContainer.appendChild(constellationWrapper);
+
+            // Populate Synergy Picker
+            Object.values(appData.roles).forEach(role => {
+                const pickerEl = document.createElement('div');
+                pickerEl.className = 'synergy-slot p-4 rounded-xl flex items-center gap-3 cursor-pointer';
+                pickerEl.dataset.role = role.id;
+                pickerEl.innerHTML = `
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0" style="background-color: ${role.color};">${role.initials}</div>
+                    <span class="font-semibold text-slate-200">${role.name}</span>
+                `;
+                synergyRolePicker.appendChild(pickerEl);
+            });
+
+            // Populate Workflow Nav
+            appData.workflow.forEach(step => {
+                const navItem = document.createElement('div');
+                navItem.className = 'timeline-item';
+                navItem.dataset.step = step.step;
+                navItem.innerHTML = `<p class="font-heading font-semibold text-lg text-slate-200 transition-colors duration-300 hover:text-white">${step.title}</p>`;
+                workflowStepsNav.appendChild(navItem);
+            });
+
+            // --- EVENT LISTENERS ---
+            constellationContainer.addEventListener('click', (e) => {
+                const node = e.target.closest('.constellation-node');
+                if (node) renderRoleDetails(node.dataset.role);
+            });
+
+            synergyRolePicker.addEventListener('click', (e) => {
+                const slot = e.target.closest('.synergy-slot');
+                if (slot) handleSynergyPick(slot.dataset.role);
+            });
+
+            workflowStepsNav.addEventListener('click', (e) => {
+                const stepEl = e.target.closest('.timeline-item');
+                if (stepEl) renderWorkflowStep(parseInt(stepEl.dataset.step));
+            });
+
+            interactivePipeline.addEventListener('click', (e) => {
+                const stepEl = e.target.closest('.group');
+                if (stepEl) {
+                    const stepData = appData.pipeline[stepEl.dataset.index];
+                    const role = appData.roles[stepData.role];
+                    pipelineDetails.style.opacity = 0;
+                    setTimeout(() => {
+                        pipelineDetails.innerHTML = `<h4 class="font-heading font-bold text-xl mb-2" style="color:${role.color};">${stepData.name} - ${role.name}</h4><p class="text-slate-300 max-w-2xl mx-auto">${stepData.description}</p>`;
+                        pipelineDetails.style.opacity = 1;
+                    }, 300);
+                    document.querySelectorAll('#interactive-pipeline .group div').forEach(el => {
+                        el.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                        el.style.boxShadow = 'none';
+                    });
+                    const div = stepEl.querySelector('div');
+                    div.style.backgroundColor = `${role.color}20`;
+                    div.style.boxShadow = `0 0 25px ${role.color}80`;
+                }
+            });
+
+            // Scrollspy for nav links
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 150) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Intersection Observer for animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.animated-entry').forEach(el => observer.observe(el));
+
+            // --- INITIAL RENDER ---
+            renderRoleDetails('da');
+            renderComparison();
+            renderWorkflowStep(1);
+            document.querySelector('#interactive-pipeline .group').click();
+            document.querySelector('.nav-link[href="#overview"]').classList.add('active');
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>
